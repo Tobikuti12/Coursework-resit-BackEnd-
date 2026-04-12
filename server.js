@@ -8,7 +8,9 @@ app.use(express.json());
 
 // simple logger
 app.use((req, res, next) => {
-  console.log(new Date().toISOString(), req.method, req.url);
+  const time = new Date().toISOString();
+  const query = Object.keys(req.query).length ? ` | query: ${JSON.stringify(req.query)}` : '';
+  console.log(`[${time}] ${req.method} ${req.url}${query}`);
   next();
 });
 
@@ -41,9 +43,11 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.get('/search', async (req,res) => {
   const q = (req.query.q || req.query.query || '').trim();
+  console.log(`[SEARCH] query="${q || '(all)'}"`);
   try {
     const filter = q ? { title: { $regex: q, $options: 'i' } } : {};
-    const results = db ? await db.collection('Products').find(filter).toArray() : [];
+    const results = db ? await db.collection('products').find(filter).toArray() : [];
+    console.log(`[SEARCH] found ${results.length} result(s) for "${q || '(all)'}"`);
     res.json(results);
   } catch(e){
     console.error('search error', e);
